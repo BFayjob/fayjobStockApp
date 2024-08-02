@@ -1,46 +1,78 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { Table, Row } from 'react-native-table-component';
-import Modal from 'react-native-modal';
-
-const tableData = {
-  tableHead: ['Brand', 'Size', 'Quantity', 'Action'],
-  tableData: [
-    ['Ace', '9mm', '234'],
-    ['BrandB', '12mm', '120'],
-    ['BrandC', '15mm', '345'],
-    // Add more rows as needed
-  ],
-};
 
 const CurrentStockTable = () => {
-  const [data, setData] = useState(tableData);
+  const [data, setData] = useState({
+    tableHead: ['Brand', 'Size', 'Quantity', 'Action'],
+    tableData: [],
+  });
   const [modalVisible, setModalVisible] = useState(false);
-  const [confirmVisible, setConfirmVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantityToSell, setQuantityToSell] = useState('');
   const [remark, setRemark] = useState('');
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const [itemsResponse, initialStocksResponse] = await Promise.all([
+          axios.get('http://localhost:5432/api/items'),
+          axios.get('http://localhost:5432/api/initialstocks'),
+        ]);
+
+        const items = itemsResponse.data;
+        const initialStocks = initialStocksResponse.data;
+
+        // Combine initial stock with current items
+        const combinedData = initialStocks.map((stock) => {
+          const item = items.find((item) => item.brand === stock.brand && item.size === stock.size);
+          return [
+            stock.brand,
+            stock.size,
+            item ? item.quantity.toString() : '0',
+            item ? item.remark : '',
+          ];
+        });
+
+        setData({ ...data, tableData: combinedData });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchItems();
+  }, []);
 
   const handleSell = (rowIndex) => {
     setSelectedItem(data.tableData[rowIndex]);
     setModalVisible(true);
   };
 
-  const handleSellConfirmation = () => {
-    setModalVisible(false);
-    setConfirmVisible(true);
-  };
+  const handleSellConfirmation = async () => {
+    try {
+      const updatedQuantity = parseInt(selectedItem[2]) - parseInt(quantityToSell);
+      const updatedItem = {
+        brand: selectedItem[0],
+        size: selectedItem[1],
+        quantity: updatedQuantity,
+        remark,
+      };
+      await axios.put(
+        `http://localhost:5432/api/items/${selectedItem[0]}/${selectedItem[1]}`,
+        updatedItem
+      );
 
-  const confirmSell = () => {
-    // Handle the sell action here
-    setConfirmVisible(false);
-    Alert.alert(
-      'Sold',
-      `You have sold ${quantityToSell} bags of ${selectedItem[0]} ${selectedItem[1]}`
-    );
-    // Reset the inputs
-    setQuantityToSell('');
-    setRemark('');
+      const updatedData = data.tableData.map((item, index) =>
+        index === selectedItem.index
+          ? [item[0], item[1], updatedQuantity.toString(), item[3]]
+          : item
+      );
+      setData({ ...data, tableData: updatedData });
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error updating item:', error);
+    }
   };
 
   return (
@@ -63,10 +95,10 @@ const CurrentStockTable = () => {
         ))}
       </Table>
       <Modal
-        isVisible={modalVisible}
-        onBackdropPress={() => setModalVisible(false)}
-        backdropTransitionOutTiming={0}
-        backdropOpacity={0.5}>
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>SELL ITEM</Text>
           {selectedItem && (

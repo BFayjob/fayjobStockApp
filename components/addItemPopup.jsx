@@ -1,10 +1,11 @@
 // components/AddItemPopup.js
 import React, { useState } from 'react';
+import axios from 'axios';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
 const brands = [
-  { label: 'Bluercornw', value: 'Bluercornw', sizes: ['2mm', '3mm', '4mm', '6mm', '9mm'] },
+  { label: 'Bluercrown', value: 'BlueCrown', sizes: ['2mm', '3mm', '4mm', '6mm', '9mm'] },
   { label: 'Ace', value: 'Ace', sizes: ['3mm', '4mmRL', '4mmGL', '6mm', '8mm'] },
   { label: 'EcoFloat', value: 'EcoFloat', sizes: ['3mm', '4mm', '6mm', '9mm'] },
   {
@@ -20,13 +21,28 @@ const AddItemPopup = ({ visible, onClose, onAddItem }) => {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState('');
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (selectedBrand && selectedSize && quantity) {
-      onAddItem({ brand: selectedBrand, size: selectedSize, quantity });
-      setSelectedBrand('');
-      setSelectedSize('');
-      setQuantity('');
-      onClose(); // Close the popup after adding the item
+      try {
+        const newItem = {
+          brand: selectedBrand,
+          size: selectedSize,
+          quantity: parseInt(quantity, 10),
+          remark: 'Some remark', // Adjust this as needed
+        };
+
+        const response = await axios.post('http://localhost:5432/api/items', newItem); // Update the endpoint
+        const addedItem = response.data;
+
+        onAddItem(addedItem);
+        setSelectedBrand('');
+        setSelectedSize('');
+        setQuantity('');
+        onClose(); // Close the popup after adding the item
+      } catch (error) {
+        alert('Error', 'There was an error adding the item. Please try again.');
+        console.error('Error adding item:', error);
+      }
     } else {
       alert('Please fill all fields');
     }
