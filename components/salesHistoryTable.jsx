@@ -14,7 +14,7 @@ const SalesHistoryTable = () => {
   useEffect(() => {
     const fetchSalesHistory = async () => {
       try {
-        const response = await axios.get('http://localhost:5432/api/saleshistory'); // Updated endpoint
+        const response = await axios.get('http://localhost:5000/api/sales-history');
         const fetchedData = response.data.map((item) => ({
           id: item._id, // Assuming each item has a unique _id
           data: [item.brand, item.size, item.quantity.toString(), item.remark],
@@ -39,7 +39,7 @@ const SalesHistoryTable = () => {
         text: 'Delete',
         onPress: async () => {
           try {
-            await axios.delete(`http://localhost:5432/api/saleshistory/${itemToDelete.id}`); // Updated endpoint
+            await axios.delete(`http://localhost:5000/api/sales-history/${itemToDelete.id}`);
             const updatedData = salesHistory.tableData.filter((_, index) => index !== rowIndex);
             setSalesHistory({ ...salesHistory, tableData: updatedData });
           } catch (error) {

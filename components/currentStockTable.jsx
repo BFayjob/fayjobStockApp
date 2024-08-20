@@ -17,8 +17,8 @@ const CurrentStockTable = () => {
     const fetchItems = async () => {
       try {
         const [itemsResponse, initialStocksResponse] = await Promise.all([
-          axios.get('http://localhost:5432/api/items'),
-          axios.get('http://localhost:5432/api/initialstocks'),
+          axios.get('http://localhost:5000/api/items'),
+          axios.get('http://localhost:5000/api/stocks'),
         ]);
 
         const items = itemsResponse.data;
@@ -43,7 +43,6 @@ const CurrentStockTable = () => {
 
     fetchItems();
   }, []);
-
   const handleSell = (rowIndex) => {
     setSelectedItem(data.tableData[rowIndex]);
     setModalVisible(true);
@@ -59,7 +58,7 @@ const CurrentStockTable = () => {
         remark,
       };
       await axios.put(
-        `http://localhost:5432/api/items/${selectedItem[0]}/${selectedItem[1]}`,
+        `http://localhost:5000/api/items/${selectedItem[0]}/${selectedItem[1]}`,
         updatedItem
       );
 

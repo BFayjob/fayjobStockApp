@@ -31,7 +31,7 @@ const AddItemPopup = ({ visible, onClose, onAddItem }) => {
           remark: 'Some remark', // Adjust this as needed
         };
 
-        const response = await axios.post('http://localhost:5432/api/items', newItem); // Update the endpoint
+        const response = await axios.post('http://localhost:5000/api/items', newItem);
         const addedItem = response.data;
 
         onAddItem(addedItem);
